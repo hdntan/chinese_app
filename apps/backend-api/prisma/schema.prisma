@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ENUMS
+enum Role {
+  USER
+  ADMIN
+}
+
+enum LessonType {
+  VOCABULARY
+  GRAMMAR
+  CONVERSATION
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+// USERS
+model User {
+  id           String         @id @default(uuid())
+  email        String         @unique
+  passwordHash String
+  role         Role           @default(USER)
+  fullName     String?
+  avatarUrl    String?
+  currentHsk   Int            @default(1)
+  gems         Int            @default(0)
+  totalXp      Int            @default(0)
+  streak       Int            @default(0)
+  isPremium    Boolean        @default(false)
+  createdAt    DateTime       @default(now())
+  progress     UserProgress[]
+  comments     Comment[]
+}
+
+// HSK LEVELS
+model HskLevel {
+  id          Int      @id @default(autoincrement())
+  level       Int      @unique
+  name        String
+  description String?
+  lessons     Lesson[]
+}
+
+// LESSONS
+model Lesson {
+  id           Int            @id @default(autoincrement())
+  levelId      Int
+  level        HskLevel       @relation(fields: [levelId], references: [id])
+  title        String
+  description  String?
+  type         LessonType     @default(VOCABULARY)
+  status       ContentStatus  @default(DRAFT)
+  isFree       Boolean        @default(false)
+  orderIndex   Int
+  mediaUrl     String?
+  vocabularies Vocabulary[]
+  dialogues    DialogueLine[]
+  comments     Comment[]
+}
+
+// VOCABULARY
+model Vocabulary {
+  id             Int            @id @default(autoincrement())
+  lessonId       Int
+  lesson         Lesson         @relation(fields: [lessonId], references: [id])
+  hanzi          String
+  pinyin         String
+  meaningVn      String
+  audioUrl       String?
+  strokeOrderSvg String?
+  exampleHanzi   String?
+  exampleMeaning String?
+  userProgress   UserProgress[]
+}
+
+// DIALOGUE LINES
+model DialogueLine {
+  id            Int     @id @default(autoincrement())
+  lessonId      Int
+  lesson        Lesson  @relation(fields: [lessonId], references: [id])
+  roleName      String
+  avatarUrl     String?
+  contentHanzi  String
+  contentPinyin String
+  meaningVn     String
+  audioUrl      String?
+  orderIndex    Int
+}
+
+// SRS SYSTEM
+model UserProgress {
+  id           String     @id @default(uuid())
+  userId       String
+  vocabId      Int
+  user         User       @relation(fields: [userId], references: [id])
+  vocab        Vocabulary @relation(fields: [vocabId], references: [id])
+  status       String
+  easiness     Float      @default(2.5)
+  interval     Int        @default(0)
+  nextReviewAt DateTime   @default(now())
+
+  @@unique([userId, vocabId])
+}
+
+// COMMENTS
+model Comment {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  lessonId  Int
+  lesson    Lesson   @relation(fields: [lessonId], references: [id])
+  content   String
+  createdAt DateTime @default(now())
+}
