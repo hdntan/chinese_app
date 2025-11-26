@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { VocabulariesService } from './vocabularies.service';
 import { CreateVocabularyDto } from './dto/create-vocabulary.dto';
 import { UpdateVocabularyDto } from './dto/update-vocabulary.dto';
@@ -23,7 +31,10 @@ export class VocabulariesController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateVocabularyDto: UpdateVocabularyDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateVocabularyDto: UpdateVocabularyDto,
+  ) {
     return this.vocabulariesService.update(+id, updateVocabularyDto);
   }
 
