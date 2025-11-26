@@ -1,19 +1,29 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
-import { getLessons, createLesson, deleteLesson, getLevels, type Lesson } from '@/lib/api';
+import { useForm, type SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { getLessons, createLesson, deleteLesson, getLevels } from '@/lib/api';
+import { lessonSchema, type LessonFormData } from '@/lib/schemas';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
+import { AxiosError } from 'axios';
 
 export default function Lessons() {
   const queryClient = useQueryClient();
   const { data: lessons, isLoading } = useQuery({ queryKey: ['lessons'], queryFn: getLessons });
   const { data: levels } = useQuery({ queryKey: ['levels'], queryFn: getLevels });
-  const { register, handleSubmit, reset } = useForm<Omit<Lesson, 'id' | 'level'>>();
+  const { register, handleSubmit, reset, formState: { errors } } = useForm({
+    resolver: zodResolver(lessonSchema),
+  });
 
   const createMutation = useMutation({
     mutationFn: createLesson,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lessons'] });
+      toast.success('Lesson created successfully');
       reset();
+    },
+    onError: (error: AxiosError<{ message: string }>) => {
+      toast.error(error.response?.data?.message || 'Failed to create lesson');
     },
   });
 
@@ -21,14 +31,19 @@ export default function Lessons() {
     mutationFn: deleteLesson,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lessons'] });
+      toast.success('Lesson deleted successfully');
+    },
+    onError: (error: AxiosError<{ message: string }>) => {
+      toast.error(error.response?.data?.message || 'Failed to delete lesson');
     },
   });
 
-  const onSubmit = (data: Omit<Lesson, 'id' | 'level'>) => {
+  const onSubmit: SubmitHandler<LessonFormData> = (data) => {
     createMutation.mutate({
       ...data,
-      levelId: Number(data.levelId),
-      orderIndex: Number(data.orderIndex),
+      type: 'VOCABULARY',
+      status: 'PUBLISHED',
+      isFree: true,
     });
   };
 
@@ -53,7 +68,11 @@ export default function Lessons() {
                   <p className="text-gray-500 text-sm">Level: HSK {lesson.level?.level}</p>
                 </div>
                 <button
-                  onClick={() => deleteMutation.mutate(lesson.id)}
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to delete this lesson?')) {
+                      deleteMutation.mutate(lesson.id);
+                    }
+                  }}
                   className="text-red-500 hover:text-red-700"
                 >
                   Delete
@@ -69,33 +88,36 @@ export default function Lessons() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">Level</label>
-              <select {...register('levelId', { required: true })} className="w-full p-2 border rounded">
+              <select {...register('levelId')} className="w-full p-2 border rounded">
                 <option value="">Select Level</option>
                 {levels?.map((level) => (
                   <option key={level.id} value={level.id}>HSK {level.level}</option>
                 ))}
               </select>
+              {errors.levelId && <p className="text-red-500 text-sm mt-1">{errors.levelId.message}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Title</label>
               <input
-                {...register('title', { required: true })}
+                {...register('title')}
                 className="w-full p-2 border rounded"
                 placeholder="Lesson Title"
               />
+              {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title.message}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Order Index</label>
               <input
                 type="number"
-                {...register('orderIndex', { required: true })}
+                {...register('orderIndex')}
                 className="w-full p-2 border rounded"
                 placeholder="1"
               />
+              {errors.orderIndex && <p className="text-red-500 text-sm mt-1">{errors.orderIndex.message}</p>}
             </div>
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+              className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
               disabled={createMutation.isPending}
             >
               {createMutation.isPending ? 'Creating...' : 'Create Lesson'}
