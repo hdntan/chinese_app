@@ -10,6 +10,7 @@ export const lessonSchema = z.object({
   levelId: z.coerce.number().min(1, 'Level is required'),
   title: z.string().min(1, 'Title is required'),
   orderIndex: z.coerce.number().min(1, 'Order index must be at least 1'),
+  mediaUrl: z.string().optional(),
 });
 
 export const vocabularySchema = z.object({
@@ -17,6 +18,7 @@ export const vocabularySchema = z.object({
   hanzi: z.string().min(1, 'Hanzi is required'),
   pinyin: z.string().min(1, 'Pinyin is required'),
   meaningVn: z.string().min(1, 'Meaning (VN) is required'),
+  audioUrl: z.string().optional(),
 });
 
 export const dialogueLineSchema = z.object({
@@ -26,6 +28,8 @@ export const dialogueLineSchema = z.object({
   contentPinyin: z.string().min(1, 'Content (Pinyin) is required'),
   meaningVn: z.string().min(1, 'Meaning (VN) is required'),
   orderIndex: z.coerce.number().min(1, 'Order index must be at least 1'),
+  audioUrl: z.string().optional(),
+  avatarUrl: z.string().optional(),
 });
 
 export type LevelFormData = z.infer<typeof levelSchema>;

@@ -1,17 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm, type SubmitHandler } from 'react-hook-form';
+import { useForm, type SubmitHandler, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getLessons, createLesson, deleteLesson, getLevels } from '@/lib/api';
 import { lessonSchema, type LessonFormData } from '@/lib/schemas';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { AxiosError } from 'axios';
+import { FileUpload } from '@/components/FileUpload';
 
 export default function Lessons() {
   const queryClient = useQueryClient();
   const { data: lessons, isLoading } = useQuery({ queryKey: ['lessons'], queryFn: getLessons });
   const { data: levels } = useQuery({ queryKey: ['levels'], queryFn: getLevels });
-  const { register, handleSubmit, reset, formState: { errors } } = useForm({
+  const { register, handleSubmit, reset, control, formState: { errors } } = useForm({
     resolver: zodResolver(lessonSchema),
   });
 
@@ -115,6 +116,18 @@ export default function Lessons() {
               />
               {errors.orderIndex && <p className="text-red-500 text-sm mt-1">{errors.orderIndex.message}</p>}
             </div>
+            <Controller
+              control={control}
+              name="mediaUrl"
+              render={({ field }) => (
+                <FileUpload
+                  label="Cover Image"
+                  accept="image/*"
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
             <button
               type="submit"
               className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"

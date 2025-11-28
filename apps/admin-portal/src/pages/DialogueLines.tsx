@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm, type SubmitHandler } from 'react-hook-form';
+import { useForm, type SubmitHandler, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getDialogueLines, createDialogueLine, deleteDialogueLine, getLessons } from '@/lib/api';
 import { dialogueLineSchema, type DialogueLineFormData } from '@/lib/schemas';
@@ -7,12 +7,13 @@ import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { AxiosError } from 'axios';
+import { FileUpload } from '@/components/FileUpload';
 
 export default function DialogueLines() {
   const queryClient = useQueryClient();
   const { data: dialogueLines, isLoading } = useQuery({ queryKey: ['dialogue-lines'], queryFn: getDialogueLines });
   const { data: lessons } = useQuery({ queryKey: ['lessons'], queryFn: getLessons });
-  const { register, handleSubmit, reset, formState: { errors } } = useForm({
+  const { register, handleSubmit, reset, control, formState: { errors } } = useForm({
     resolver: zodResolver(dialogueLineSchema),
   });
   const [selectedLessonId, setSelectedLessonId] = useState<number | 'all'>('all');
@@ -161,6 +162,31 @@ export default function DialogueLines() {
               />
               {errors.orderIndex && <p className="text-red-500 text-sm mt-1">{errors.orderIndex.message}</p>}
             </div>
+            <Controller
+              control={control}
+              name="avatarUrl"
+              render={({ field }) => (
+                <FileUpload
+                  label="Role Avatar"
+                  accept="image/*"
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+            <Controller
+              control={control}
+              name="audioUrl"
+              render={({ field }) => (
+                <FileUpload
+                  label="Audio Line"
+                  accept="audio/*"
+                  type="audio"
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
             <button
               type="submit"
               className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
